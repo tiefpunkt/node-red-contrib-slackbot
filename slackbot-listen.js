@@ -4,15 +4,15 @@ module.exports = function(RED) {
     'use strict';
 
     function Node(n) {
-      
+
         RED.nodes.createNode(this,n);
 
         var node = this;
-        
+
         var slackbot = RED.nodes.getNode(n.slackbot);
-        
+
         if (slackbot.bot_token) {
-            
+
             node.controller = Botkit.slackbot({
                 debug: false,
             });
@@ -20,21 +20,27 @@ module.exports = function(RED) {
             node.bot = this.controller.spawn({
                 token: slackbot.bot_token
             }).startRTM();
-            
+
         }
 
-        node.controller.on('direct_message,direct_mention,mention',function(bot, message) {
-            
-            var msg = { 
+        var events = 'direct_message,direct_mention,mention';
+
+        if (n.ambient) {
+            events = events + ',ambient';
+        }
+
+        node.controller.on(events,function(bot, message) {
+
+            var msg = {
                 message: message,
-                payload: message.text 
+                payload: message.text
             };
-            
+
             console.log(msg);
-            
+
             node.send(msg);
         });
-        
+
         node.on('close', function(done) {
             node.controller.shutdown();
             node.bot.closeRTM();
